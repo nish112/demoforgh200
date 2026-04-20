@@ -1,34 +1,47 @@
-name: Seventh Demo (Label Triggered Deployment)
+# -----------------------------------------------------------------------------------
+# TRAINER PRE-REQUISITE:
+# You must manually create the label "stage-deploy" in the GitHub UI 
+# (Settings > Labels) before running this. 
+# The trigger is ATTACHING this label to a Pull Request.
+# -----------------------------------------------------------------------------------
+
+name: Seveth demo (Label Triggered Deployment)
 
 on:
   pull_request:
-    types: [labeled] # This is the specific event trigger
+    types: [labeled] # The event that starts the engine
 
 jobs:
-  check-label-and-deploy:
-    # We only want this job to run if the label is exactly "stage-deploy"
+  deploy-job:
+    # Logic: Only execute if the label added is exactly "stage-deploy"
     if: github.event.label.name == 'stage-deploy'
     runs-on: ubuntu-latest
-    steps:
-      - name: Acknowledge Label
-        run: |
-          echo "Label detected: ${{ github.event.label.name }}"
-          echo "Triggering deployment to Staging Environment..."
+    
+    # FIX: Explicitly granting write access to the GITHUB_TOKEN
+    permissions:
+      pull-requests: write
+      issues: write
+      contents: read
 
-      - name: Simulate Deployment
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Simulated Deployment
         run: |
-          # This is where your actual deployment scripts (Azure/AWS) would go
-          echo "Deploying code from branch: ${{ github.head_ref }}"
+          echo "🚀 Deploying PR #${{ github.event.pull_request.number }} to Staging..."
+          echo "Branch: ${{ github.head_ref }}"
           sleep 5
-          echo "Deployment Successful! ✅"
+          echo "Deployment successful for Lucknow Lab Environment! ✅"
 
       - name: Add Feedback Comment
         uses: actions/github-script@v7
         with:
           script: |
-            github.rest.issues.createComment({
+            // This script will now succeed because of the permissions block above
+            await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: "🚀 **Auto-Deployment Started:** I detected the `stage-deploy` label. Your changes are being pushed to the staging server!"
+              issue_number: context.payload.pull_request.number,
+              body: `🚀 **Deployment Dashboard Update** \n\n I detected the \`stage-deploy\` label. This branch has been successfully pushed to the staging server. \n\n **Triggered by:** @${context.actor}`
             })
