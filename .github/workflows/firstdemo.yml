@@ -1,0 +1,71 @@
+name: First demo (Node.js Matrix & Artifact Demo)
+
+on:
+  workflow_dispatch: # Best for class: triggers the action manually from the UI
+  push:
+    branches: [ main ]
+
+jobs:
+  # JOB 1: Install, Test, and Run Logic
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Explaining Matrix: Runs 4 parallel jobs (2 versions x 2 sets of numbers)
+        node-version: [18.x, 20.x]
+        values: ["10 20", "40 60"]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Tests
+        run: npm test
+
+      - name: Run Logic Script & Create Infrastructure
+        # Method B: Infrastructure (folder) and Data Flow (redirection) handled in YAML
+        run: |
+          echo "Creating output directory on the runner..."
+          mkdir -p output
+          echo "Running logic script with matrix values: ${{ matrix.values }}"
+          node src/math.js ${{ matrix.values }} > output/result.txt
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          # Unique naming using job-index prevents matrix overwrite conflict
+          name: result-${{ matrix.node-version }}-${{ strategy.job-index }}
+          path: output/
+          retention-days: 1
+
+  # JOB 2: Aggregate results from the Matrix
+  summary:
+    needs: build-and-test # Sequential Dependency (DAG)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: final-results
+
+      - name: Display Summary and Contents
+        run: |
+          echo "Step 1: Listing the downloaded directory structure..."
+          ls -R final-results
+          
+          echo "Step 2: Displaying the content of every result file..."
+          echo "------------------------------------------------"
+          # Loop through files to echo filenames and their specific contents
+          for file in final-results/**/*.txt; do
+            echo "FILE: $file"
+            echo "CONTENT: $(cat "$file")"
+            echo "------------------------------------------------"
+          done
