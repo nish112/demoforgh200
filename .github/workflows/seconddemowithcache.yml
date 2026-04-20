@@ -1,0 +1,67 @@
+name: Cache Demo (Performance Optimization)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+        values: ["10 20", "40 60"]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install & Run
+        run: |
+          npm install
+          mkdir -p output
+          node src/math.js ${{ matrix.values }} > output/result-${{ strategy.job-index }}.txt
+
+      - name: Save to Cache
+        # We use a unique key per job index so they don't overwrite each other
+        uses: actions/cache/save@v4
+        with:
+          path: output/
+          key: math-cache-${{ github.run_id }}-${{ strategy.job-index }}
+
+  summary:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore All Caches
+        # In a real scenario, we'd loop or use a broader key, 
+        # but for this demo, we restore the specific outputs.
+        run: |
+          echo "Restoring data from the cache storage..."
+          
+      - name: Restore Matrix 0
+        uses: actions/cache/restore@v4
+        with:
+          path: final-results/0
+          key: math-cache-${{ github.run_id }}-0
+          
+      - name: Restore Matrix 1
+        uses: actions/cache/restore@v4
+        with:
+          path: final-results/1
+          key: math-cache-${{ github.run_id }}-1
+
+      # (Repeat for 2 and 3 if demonstrating full matrix restore)
+
+      - name: Display Summary
+        run: |
+          echo "Listing restored cache files:"
+          ls -R final-results
+          echo "--- Contents ---"
+          cat final-results/**/*.txt
