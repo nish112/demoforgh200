@@ -1,4 +1,4 @@
-name: Node.js Matrix & Artifact Demo
+name: First demo (Node.js Matrix & Artifact Demo)
 
 on:
   workflow_dispatch: # Best for class: triggers the action manually from the UI
