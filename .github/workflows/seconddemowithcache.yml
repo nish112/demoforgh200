@@ -1,4 +1,4 @@
-name: Second demo (Node.js Cache Strategy)
+name: Second demo (cache)
 
 on:
   workflow_dispatch:
@@ -6,12 +6,13 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-test:
+  build-and-calculate:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
-        values: ["10 20", "40 60"]
+        # We use a single version to keep the logs clean for the demo
+        node-version: [20.x]
+        values: ["10 20"]
 
     steps:
       - name: Checkout Code
@@ -22,56 +23,37 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Install & Run Logic
-        run: |
-          npm install
-          npm test
-          mkdir -p output
-          # We name the file specifically by the job index here
-          node src/math.js ${{ matrix.values }} > output/result-${{ strategy.job-index }}.txt
+      - name: ⚡ Attempt Restore from GitHub Global Server
+        # This highlights the "Restore" action. 
+        # It reaches out to the central GitHub storage to find a match.
+        id: cache-logic
+        uses: actions/cache/restore@v4
+        with:
+          path: output/
+          # The key is the 'Search Term'. If values change, the key changes.
+          key: math-logic-${{ matrix.values }}
 
-      - name: Save to Cache
+      - name: 🔨 Run Logic (On Cache Miss)
+        # This step only runs if the 'Search Term' was NOT found on the server.
+        if: steps.cache-logic.outputs.cache-hit != 'true'
+        run: |
+          echo "No cache found for ${{ matrix.values }}. Performing calculation..."
+          mkdir -p output
+          node src/math.js ${{ matrix.values }} > output/result.txt
+          # Artificial delay to show the class that 'Work' is happening
+          sleep 5 
+
+      - name: ✅ Skip Logic (On Cache Hit)
+        # This step only runs if the GitHub Server successfully sent the files back.
+        if: steps.cache-logic.outputs.cache-hit == 'true'
+        run: |
+          echo "Cache Hit! The server sent back a 100% match."
+          echo "The restored result from the server is: $(cat output/result.txt)"
+
+      - name: 💾 Save to Global Server (On Cache Miss)
+        # We only save if we actually performed the 'Work' in this run.
+        if: steps.cache-logic.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: output/
-          key: math-cache-${{ github.run_id }}-${{ strategy.job-index }}
-
-  summary:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    steps:
-      # We restore each cache into a unique local folder to avoid collisions
-      - name: Restore Cache 0
-        uses: actions/cache/restore@v4
-        with:
-          path: final-results/0
-          key: math-cache-${{ github.run_id }}-0
-
-      - name: Restore Cache 1
-        uses: actions/cache/restore@v4
-        with:
-          path: final-results/1
-          key: math-cache-${{ github.run_id }}-1
-
-      - name: Restore Cache 2
-        uses: actions/cache/restore@v4
-        with:
-          path: final-results/2
-          key: math-cache-${{ github.run_id }}-2
-
-      - name: Restore Cache 3
-        uses: actions/cache/restore@v4
-        with:
-          path: final-results/3
-          key: math-cache-${{ github.run_id }}-3
-
-      - name: Display Summary
-        run: |
-          echo "Step 1: Listing restored cache structure..."
-          # The -R (recursive) flag is key to seeing into the subfolders
-          ls -R final-results
-          
-          echo "Step 2: Displaying Combined Contents..."
-          echo "------------------------------------------------"
-          # This wildcard pattern finds the .txt files regardless of depth
-          find final-results -name "*.txt" -exec sh -c 'echo "FILE: {}"; echo "CONTENT: $(cat {})"; echo "------------------------------------------------"' \;
+          key: math-logic-${{ matrix.values }}
