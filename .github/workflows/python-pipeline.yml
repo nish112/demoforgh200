@@ -1,0 +1,57 @@
+name: Python Matrix & Artifact Demo
+
+on:
+  workflow_dispatch: # Allows you to trigger manually for the class
+  push:
+    branches: [ main ]
+
+jobs:
+  # JOB 1: Test and Compute using Matrix Strategy
+  compute:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # Runs 3 parallel instances with these version/number combos
+        python-version: ["3.9", "3.10"]
+        numbers: ["10 20", "50 50"]
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-node@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run Tests
+        run: |
+          pip install pytest
+          pytest tests/test_math.py
+
+      - name: Run Math Script
+        # Passing matrix values as arguments
+        run: python scripts/math_operations.py ${{ matrix.numbers }}
+
+      - name: Upload Result as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          # Unique name for each matrix combination
+          name: math-result-${{ matrix.python-version }}-${{ strategy.job-index }}
+          path: output/
+
+  # JOB 2: Download and Display
+  summary:
+    needs: compute # Wait for all matrix jobs to finish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-results
+
+      - name: Display Final Results
+        run: |
+          echo "Aggregating all matrix results:"
+          ls -R all-results
+          cat all-results/**/*.txt
