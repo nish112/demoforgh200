@@ -1,0 +1,54 @@
+name: Node.js Matrix & Artifact Demo
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+        values: ["10 20", "40 60"]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm' # Automatically caches node_modules based on package-lock.json
+
+      - name: Install Dependencies
+        # 'npm ci' is cleaner and faster for CI environments
+        run: npm ci
+
+      - name: Run Tests
+        run: npm test
+
+      - name: Run Script
+        run: node src/math.js ${{ matrix.values }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: result-${{ matrix.node-version }}-${{ strategy.job-index }}
+          path: output/
+
+  summary:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: final-results
+
+      - name: Display Summary
+        run: |
+          ls -R final-results
+          cat final-results/**/*.txt
