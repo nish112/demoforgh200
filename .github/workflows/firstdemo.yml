@@ -2,8 +2,7 @@ name: First demo (Node.js Matrix & Artifact Demo)
 
 on:
   workflow_dispatch: # Best for class: triggers the action manually from the UI
-  push:
-    branches: [ main ]
+
 
 jobs:
   # JOB 1: Install, Test, and Run Logic
