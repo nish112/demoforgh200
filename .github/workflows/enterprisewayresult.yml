@@ -1,0 +1,83 @@
+name: Third demo (GH-200 Matrix & Dashboard Demo)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  # JOB 1: Parallel Processing
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+        values: ["10 20", "40 60"]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install & Test
+        run: |
+          npm install
+          npm test
+
+      - name: Execute Logic
+        run: |
+          mkdir -p output
+          # Passing matrix values to the script
+          node src/math.js ${{ matrix.values }} > output/result.txt
+
+      - name: Upload Results
+        uses: actions/upload-artifact@v4
+        with:
+          # Creating a unique name for each of the 4 parallel jobs
+          name: result-${{ strategy.job-index }}
+          path: output/
+          retention-days: 1
+
+  # JOB 2: Dashboard Generation
+  summary:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: final-results
+
+      - name: 📊 Generate Step Summary Dashboard
+        run: |
+          # Start building the Markdown report
+          echo "## 🚀 GH-200 Workflow Dashboard" >> $GITHUB_STEP_SUMMARY
+          echo "This dashboard aggregates data from all parallel matrix jobs." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Create a professional Table
+          echo "| Job Index | Source File | Calculation Result | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+
+          # Iterate through the downloaded artifact folders
+          for dir in final-results/*; do
+            if [ -d "$dir" ]; then
+              JOB_ID=$(basename "$dir")
+              FILE_PATH="$dir/result.txt"
+              
+              if [ -f "$FILE_PATH" ]; then
+                RESULT=$(cat "$FILE_PATH")
+                echo "| $JOB_ID | \`result.txt\` | **$RESULT** | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
+              else
+                echo "| $JOB_ID | \`N/A\` | *Missing* | ❌ FAIL |" >> $GITHUB_STEP_SUMMARY
+              fi
+            fi
+          done
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---"
+          echo "> **Trainer Note:** This summary was generated using the \`\$GITHUB_STEP_SUMMARY\` environment file." >> $GITHUB_STEP_SUMMARY
