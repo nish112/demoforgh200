@@ -1,4 +1,11 @@
-name: Seveth demo (Label Triggered Deployment)
+# -----------------------------------------------------------------------------------
+# TRAINER PRE-REQUISITE:
+# You must manually create the label "stage-deploy" in the GitHub UI 
+# (Settings > Labels) before running this. 
+# The trigger is ATTACHING this label to a Pull Request.
+# -----------------------------------------------------------------------------------
+
+name: Seventh Demo (Label Triggered Deployment)
 
 on:
   pull_request:
