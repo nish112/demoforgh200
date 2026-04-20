@@ -6,7 +6,7 @@ on:
     branches: [ main ]
 
 jobs:
-  # JOB 1: Parallel Processing with Unique File Naming
+  # JOB 1: Parallel Execution with Unique Naming
   build-and-test:
     runs-on: ubuntu-latest
     strategy:
@@ -23,29 +23,27 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Install & Test
-        run: |
-          npm install
-          npm test
-
       - name: Execute Logic with Unique Filename
         run: |
           mkdir -p output
-          # Creating a unique filename for each matrix combination
-          # This prevents "result.txt" appearing 4 times in the dashboard
+          # Define a unique filename using the matrix strategy index
+          # This ensures we don't have 4 files all named "result.txt"
           FILENAME="result-job-${{ strategy.job-index }}.txt"
+          
+          echo "Processing ${{ matrix.values }} on Node ${{ matrix.node-version }}..."
           node src/math.js ${{ matrix.values }} > output/$FILENAME
+          
           echo "Generated: $FILENAME"
 
-      - name: Upload Results
+      - name: Upload Unique Artifacts
         uses: actions/upload-artifact@v4
         with:
-          # Naming the artifact container uniquely
-          name: matrix-artifact-${{ strategy.job-index }}
+          # Naming the container uniquely
+          name: runner-data-${{ strategy.job-index }}
           path: output/
           retention-days: 1
 
-  # JOB 2: Dashboard Generation with Recursive Discovery
+  # JOB 2: Dashboard Generation
   summary:
     needs: build-and-test
     runs-on: ubuntu-latest
@@ -53,29 +51,30 @@ jobs:
       - name: Download all Artifacts
         uses: actions/download-artifact@v4
         with:
-          path: final-results
+          path: all-results
 
-      - name: 📊 Generate Step Summary Dashboard
+      - name: 📊 Generate Professional Summary
         run: |
-          echo "## 🚀 GH-200 Professional Workflow Dashboard" >> $GITHUB_STEP_SUMMARY
-          echo "Aggregated data from parallel matrix execution." >> $GITHUB_STEP_SUMMARY
+          # Initialize the Markdown Dashboard
+          echo "## 🚀 GH-200 Execution Dashboard" >> $GITHUB_STEP_SUMMARY
+          echo "This report aggregates unique data from **4 parallel runners**." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
           # Table Headers
-          echo "| Unique Filename | Node Version | Calculation Result | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "| Artifact Source | Unique Filename | Math Result | Status |" >> $GITHUB_STEP_SUMMARY
           echo "| :--- | :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
 
-          # Use find to locate all unique text files in the downloaded directory
-          find final-results -name "*.txt" | while read -r file; do
+          # Walk through the directory to find every unique result file
+          find all-results -name "*.txt" | while read -r file; do
             FILE_NAME=$(basename "$file")
-            # Extract parent folder name to show which matrix job it came from
-            JOB_ID=$(basename $(dirname "$file"))
+            # Get the parent folder name (e.g., runner-data-0)
+            FOLDER_NAME=$(basename $(dirname "$file"))
             RESULT=$(cat "$file")
             
-            # Append a row to the table for each file found
-            echo "| \`$FILE_NAME\` | $JOB_ID | **$RESULT** | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
+            # Append a clean row to the GitHub Summary table
+            echo "| $FOLDER_NAME | \`$FILE_NAME\` | **$RESULT** | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
           done
 
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "---"
-          echo "> **Training Insight:** Every file above has a unique 'Identity' based on its matrix index." >> $GITHUB_STEP_SUMMARY
+          echo "> **Training Note:** By using unique IDs, we avoid 'Namespace Collision' in shared storage." >> $GITHUB_STEP_SUMMARY
