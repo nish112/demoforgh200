@@ -1,12 +1,11 @@
 name: Second demo (Node.js Cache Strategy)
 
 on:
-  workflow_dispatch: # Allows manual trigger from the Actions UI
+  workflow_dispatch:
   push:
     branches: [ main ]
 
 jobs:
-  # JOB 1: Process math across 4 parallel runners
   build-and-test:
     runs-on: ubuntu-latest
     strategy:
@@ -27,28 +26,21 @@ jobs:
         run: |
           npm install
           npm test
-          # Infrastructure: Create output folder
           mkdir -p output
-          # Execution: Pipe result to unique file based on matrix index
+          # We name the file specifically by the job index here
           node src/math.js ${{ matrix.values }} > output/result-${{ strategy.job-index }}.txt
 
       - name: Save to Cache
-        # Using Cache Save instead of Upload Artifact
         uses: actions/cache/save@v4
         with:
           path: output/
-          # Key uses run_id and job-index to ensure uniqueness and security
           key: math-cache-${{ github.run_id }}-${{ strategy.job-index }}
 
-  # JOB 2: Aggregate results from all 4 Cache buckets
   summary:
-    needs: build-and-test # Wait for the parallel matrix to finish
+    needs: build-and-test
     runs-on: ubuntu-latest
     steps:
-      - name: Create Landing Directories
-        # CRITICAL FIX: Create the folders before restoring cache
-        run: mkdir -p final-results/0 final-results/1 final-results/2 final-results/3
-
+      # We restore each cache into a unique local folder to avoid collisions
       - name: Restore Cache 0
         uses: actions/cache/restore@v4
         with:
@@ -76,14 +68,10 @@ jobs:
       - name: Display Summary
         run: |
           echo "Step 1: Listing restored cache structure..."
+          # The -R (recursive) flag is key to seeing into the subfolders
           ls -R final-results
           
           echo "Step 2: Displaying Combined Contents..."
           echo "------------------------------------------------"
-          # Loop through all restored text files
-          for file in final-results/**/*.txt; do
-            [ -e "$file" ] || continue # Skip if no files exist
-            echo "SOURCE: $file"
-            echo "RESULT: $(cat "$file")"
-            echo "------------------------------------------------"
-          done
+          # This wildcard pattern finds the .txt files regardless of depth
+          find final-results -name "*.txt" -exec sh -c 'echo "FILE: {}"; echo "CONTENT: $(cat {})"; echo "------------------------------------------------"' \;
