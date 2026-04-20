@@ -1,0 +1,24 @@
+name: Failing Demo (Sabotage)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  intentional-failure:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🟢 This Step Passes
+        run: echo "Starting the demo..."
+
+      - name: 🔴 This Step Fails (The Sabotage)
+        # We use 'exit 1' to tell GitHub the process crashed.
+        # Alternatively, you can run a non-existent command like 'npm run-magic'
+        run: |
+          echo "Simulating a critical system error..."
+          exit 1 
+
+      - name: ⚪ This Step Never Runs
+        # GitHub stops the job as soon as it sees a failure.
+        run: echo "You will never see this message in the logs."
