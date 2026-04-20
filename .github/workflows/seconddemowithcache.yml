@@ -18,7 +18,7 @@ jobs:
         with:
           path: output/
           # The Key is now tied to the unique Git Commit ID
-          key: build-v2-${{ github.sha }}
+          key: build-id-${{ github.sha }}
 
       - name: 🏗️ Logic Execution (If ID not found)
         if: steps.cache-search.outputs.cache-hit != 'true'
