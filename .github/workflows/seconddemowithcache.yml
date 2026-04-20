@@ -1,4 +1,4 @@
-name: First demo (Node.js Cache Strategy)
+name: Second Demo (Node.js Cache Strategy)
 
 on:
   workflow_dispatch: # Allows manual trigger from the Actions UI
