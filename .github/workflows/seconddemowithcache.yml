@@ -1,11 +1,12 @@
-name: Cache Demo (Performance Optimization)
+name: First demo (Node.js Cache Strategy)
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Allows manual trigger from the Actions UI
   push:
     branches: [ main ]
 
 jobs:
+  # JOB 1: Process math across 4 parallel runners
   build-and-test:
     runs-on: ubuntu-latest
     strategy:
@@ -22,46 +23,67 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Install & Run
+      - name: Install & Run Logic
         run: |
           npm install
+          npm test
+          # Infrastructure: Create output folder
           mkdir -p output
+          # Execution: Pipe result to unique file based on matrix index
           node src/math.js ${{ matrix.values }} > output/result-${{ strategy.job-index }}.txt
 
       - name: Save to Cache
-        # We use a unique key per job index so they don't overwrite each other
+        # Using Cache Save instead of Upload Artifact
         uses: actions/cache/save@v4
         with:
           path: output/
+          # Key uses run_id and job-index to ensure uniqueness and security
           key: math-cache-${{ github.run_id }}-${{ strategy.job-index }}
 
+  # JOB 2: Aggregate results from all 4 Cache buckets
   summary:
-    needs: build-and-test
+    needs: build-and-test # Wait for the parallel matrix to finish
     runs-on: ubuntu-latest
     steps:
-      - name: Restore All Caches
-        # In a real scenario, we'd loop or use a broader key, 
-        # but for this demo, we restore the specific outputs.
-        run: |
-          echo "Restoring data from the cache storage..."
-          
-      - name: Restore Matrix 0
+      - name: Create Landing Directories
+        # CRITICAL FIX: Create the folders before restoring cache
+        run: mkdir -p final-results/0 final-results/1 final-results/2 final-results/3
+
+      - name: Restore Cache 0
         uses: actions/cache/restore@v4
         with:
           path: final-results/0
           key: math-cache-${{ github.run_id }}-0
-          
-      - name: Restore Matrix 1
+
+      - name: Restore Cache 1
         uses: actions/cache/restore@v4
         with:
           path: final-results/1
           key: math-cache-${{ github.run_id }}-1
 
-      # (Repeat for 2 and 3 if demonstrating full matrix restore)
+      - name: Restore Cache 2
+        uses: actions/cache/restore@v4
+        with:
+          path: final-results/2
+          key: math-cache-${{ github.run_id }}-2
+
+      - name: Restore Cache 3
+        uses: actions/cache/restore@v4
+        with:
+          path: final-results/3
+          key: math-cache-${{ github.run_id }}-3
 
       - name: Display Summary
         run: |
-          echo "Listing restored cache files:"
+          echo "Step 1: Listing restored cache structure..."
           ls -R final-results
-          echo "--- Contents ---"
-          cat final-results/**/*.txt
+          
+          echo "Step 2: Displaying Combined Contents..."
+          echo "------------------------------------------------"
+          # Loop through all restored text files
+          for file in final-results/**/*.txt; do
+            [ -e "$file" ] || continue # Skip if no files exist
+            echo "SOURCE: $file"
+            echo "RESULT: $(cat "$file")"
+            echo "------------------------------------------------"
+          done
