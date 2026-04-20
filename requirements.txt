@@ -1,2 +1,0 @@
-pytest==8.0.0
-# Add other dependencies here if your math script grows
