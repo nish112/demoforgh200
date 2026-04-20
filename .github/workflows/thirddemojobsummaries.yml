@@ -2,8 +2,7 @@ name: Third demo (GH-200 Matrix Dashboard (Unique Identity))
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
+
 
 jobs:
   # JOB 1: Parallel Execution with Unique Naming
@@ -53,28 +52,17 @@ jobs:
         with:
           path: all-results
 
-      - name: 📊 Generate Professional Summary
+      - name: 📊 Generate Clean Dashboard
         run: |
-          # Initialize the Markdown Dashboard
-          echo "## 🚀 GH-200 Execution Dashboard" >> $GITHUB_STEP_SUMMARY
-          echo "This report aggregates unique data from **4 parallel runners**." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          # Table Headers
-          echo "| Artifact Source | Unique Filename | Math Result | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "| :--- | :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "## 🚀 GH-200 Matrix Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Unique Source File | Math Result | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
 
-          # Walk through the directory to find every unique result file
-          find all-results -name "*.txt" | while read -r file; do
+          # We look specifically for the result-job-*.txt files we created
+          find all-results -name "result-job-*.txt" | while read -r file; do
             FILE_NAME=$(basename "$file")
-            # Get the parent folder name (e.g., runner-data-0)
-            FOLDER_NAME=$(basename $(dirname "$file"))
             RESULT=$(cat "$file")
             
-            # Append a clean row to the GitHub Summary table
-            echo "| $FOLDER_NAME | \`$FILE_NAME\` | **$RESULT** | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
+            # This will now display 'result-job-0.txt', 'result-job-1.txt', etc.
+            echo "| \`$FILE_NAME\` | **$RESULT** | ✅ PASS |" >> $GITHUB_STEP_SUMMARY
           done
-
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "---"
-          echo "> **Training Note:** By using unique IDs, we avoid 'Namespace Collision' in shared storage." >> $GITHUB_STEP_SUMMARY
