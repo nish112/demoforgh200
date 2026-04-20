@@ -1,4 +1,4 @@
-name: Python Matrix & Artifact Demo
+name: First demo (Python Matrix & Artifact Demo)
 
 on:
   workflow_dispatch: # Allows manual trigger for classroom demo
