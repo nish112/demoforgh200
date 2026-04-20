@@ -1,4 +1,4 @@
-name: Second demo (cache check)
+name: Second demo (cache check logic)
 
 on:
   workflow_dispatch:
