@@ -1,5 +1,5 @@
 # demoforgh200
-To ensure this renders perfectly in your GitHub README.md, I have formatted the labs into a structured layout using Markdown. You can copy the block below and paste it directly into your file.
+
 🎓 GH-200: GitHub Actions Practical Workshop
 
 This repository contains a series of progressive labs designed to take you from a GitHub Actions beginner to building full CI/CD pipelines. Each lab addresses a specific real-world IT bottleneck using the provided workflow files.
