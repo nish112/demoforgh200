@@ -1,0 +1,11 @@
+name: eleventhdemo-Maintoberun (Calc-Co Main Delivery)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  # The Boss calls the Reusable Workflow
+  execute-enterprise-pipeline:
+    uses: ./.github/workflows/reusable-build.yml
