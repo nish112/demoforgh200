@@ -1,4 +1,4 @@
-name: Test Custom Joke Action
+name: Tenth demo (Test Custom Joke Action)
 
 on: 
   workflow_dispatch: # So you can run it manually in class
