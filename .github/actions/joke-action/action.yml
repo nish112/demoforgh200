@@ -1,0 +1,20 @@
+name: 'DevOps Joker'
+description: 'Tells a tech joke to keep the developers happy'
+inputs:
+  audience:
+    description: 'Who is the joke for?'
+    required: false
+    default: 'Lucknow Students'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Tell the Joke
+      shell: bash
+      run: |
+        echo "------------------------------------------------"
+        echo "Hey ${{ inputs.audience }}! Here is your joke:"
+        echo ""
+        curl -s https://icanhazdadjoke.com/ -H "Accept: text/plain"
+        echo ""
+        echo "------------------------------------------------"
