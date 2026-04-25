@@ -1,8 +1,6 @@
-name: eleventhdemo-Maintoberun (Calc-Co Main Delivery)
+name: eleventhdemoMaintoberun (Calc-Co Main Delivery)
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
