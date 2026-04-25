@@ -1,0 +1,20 @@
+name: eleventhdemo-support (Reusable Build Expert)
+
+on:
+  workflow_call: # The magic trigger for reusability
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Here we USE the Composite Action we built in Part 1!
+      - name: Setup via our Tool
+        uses: ./.github/actions/setup-calc-tool
+        with:
+          node-version: '20'
+
+      - name: Run Calculator Tests
+        run: npm test
