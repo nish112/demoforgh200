@@ -1,0 +1,17 @@
+name: Test Custom Joke Action
+
+on: 
+  workflow_dispatch: # So you can run it manually in class
+
+jobs:
+  joke-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # We call our local custom action using its folder path
+      - name: Run my Custom Joker
+        uses: ./.github/actions/joke-action
+        with:
+          audience: "GH-200 Participants"
