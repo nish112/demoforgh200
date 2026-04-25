@@ -1,0 +1,18 @@
+name: 'Setup Calc Tool'
+description: 'Prepares the environment for Calculator logic'
+inputs:
+  node-version:
+    description: 'Version of Node to use'
+    default: '20'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Install Logic Dependencies
+      shell: bash
+      run: npm install
