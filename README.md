@@ -76,7 +76,7 @@
   <ul>
     <li><strong><code>types: [labeled]</code></strong>: The workflow only triggers when a label event occurs.</li>
     <li><strong>Permissions</strong>: Explicitly granting <code>write</code> access to post comments back to the PR.</li>
-    <li><strong>Environment</strong>: Successfully deployed specifically for the <strong>Lucknow Lab Environment</strong>.</li>
+    <li><strong>Environment</strong>: Successfully deployed specifically for the <strong>GH-200 Lab Environment</strong>.</li>
   </ul>
 </div>
 
